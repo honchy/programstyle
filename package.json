@@ -1,0 +1,23 @@
+{
+  "name": "programstyle",
+  "version": "1.0.0",
+  "description": "总结自己平时工作中用到的编程范式",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/honchy/programstyle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/honchy/programstyle/issues"
+  },
+  "homepage": "https://github.com/honchy/programstyle#readme",
+  "dependencies": {
+    "jquery": "^3.3.1"
+  }
+}
