@@ -5,42 +5,58 @@
 // 2. 将事件交给处理队列处理
 function Middleware() {
     this.list = [];
-    this.currentIndex = 0;
 }
-
-Middleware.prototype.next = function() {
-    if (this.currentIndex < this.list.length) {
-        let fn = this.list[this.currentIndex++];
-        fn.apply(this);
-    }
-};
-
 Middleware.prototype.use = function(handler) {
     this.list.push(handler);
     return this;
 };
 
-Middleware.prototype.do = function(...args) {
-    this.next();
+Middleware.prototype._execute = function(idx, next) {
+    let len = this.list.length - 1;
+
+    if (idx <= len) {
+        let mw = this.list[idx];
+        return mw.call(this, this.context, next);
+    }
 };
 
+Middleware.prototype.do = function(context) {
+    this.context = context;
+    let thisRef = this;
+    let idx = 0;
+    return this._execute(idx, next);
+
+    function next() {
+        idx += 1;
+        return thisRef._execute(idx, next);
+    }
+};
+
+// test
 var mw = new Middleware();
-mw.use(function() {
+mw.use(async function(context, next) {
     console.log("middleware 1 before");
-    this.next();
+    await next();
     console.log("middleware 1 after");
 });
 
-mw.use(function() {
-    // setTimeout(() => {
-        console.log("middleware 2 before");
-        this.next();
-        console.log("middleware 2 after");
-    // }, 100);
+mw.use(async function(context, next) {
+    // next 应该有类似 resolve 类似的功能
+    // 在底层支持Promise
+    return Promise.resolve(100).then(delay => {
+        setTimeout(async () => {
+            console.log("middleware 2 before");
+            await next();
+            console.log("middleware 2 after");
+        }, delay);
+    });
 });
 
-mw.use(function() {
-    console.log("middleware 3");
+mw.use(async function(context, next) {
+    console.log("middleware 3 before");
+    await next();
+    console.log("middleware 3 after");
 });
 
 mw.do({ name: "TestEvent" });
+// mw.do({ name: "TestEvent" });
