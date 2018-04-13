@@ -11,24 +11,24 @@ Middleware.prototype.use = function(handler) {
     return this;
 };
 
-Middleware.prototype._execute = function(idx, next) {
+Middleware.prototype._execute = async function(idx, next) {
     let len = this.list.length - 1;
 
     if (idx <= len) {
         let mw = this.list[idx];
-        return mw.call(this, this.context, next);
+        await mw.call(this, this.context, next);
     }
 };
 
-Middleware.prototype.do = function(context) {
+Middleware.prototype.do = async function(context) {
     this.context = context;
     let thisRef = this;
     let idx = 0;
-    return this._execute(idx, next);
+    await this._execute(idx, next);
 
-    function next() {
+    async function next() {
         idx += 1;
-        return thisRef._execute(idx, next);
+        await thisRef._execute(idx, next);
     }
 };
 
@@ -43,12 +43,13 @@ mw.use(async function(context, next) {
 mw.use(async function(context, next) {
     // next 应该有类似 resolve 类似的功能
     // 在底层支持Promise
-    return Promise.resolve(100).then(delay => {
+    await new Promise(resolve => {
         setTimeout(async () => {
             console.log("middleware 2 before");
             await next();
             console.log("middleware 2 after");
-        }, delay);
+            resolve();
+        }, 1000);
     });
 });
 
@@ -58,5 +59,7 @@ mw.use(async function(context, next) {
     console.log("middleware 3 after");
 });
 
-mw.do({ name: "TestEvent" });
+(async () => {
+    await mw.do({ name: "TestEvent" });
+})();
 // mw.do({ name: "TestEvent" });
