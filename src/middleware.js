@@ -1,39 +1,43 @@
-// 中间件模式
-// 当一个事件发生的时候，一次通过一系列的处理器，一个处理器处理完，再处理另外一个。顺序执行
-
-// 1. 预先设置好处理队列
-// 2. 将事件交给处理队列处理
-function Middleware() {
-    this.list = [];
+function EventMiddleWare() {
+    this._cache = [];
 }
-Middleware.prototype.use = function(handler) {
-    this.list.push(handler);
-    return this;
+EventMiddleWare.prototype.use = function(fn) {
+    this._cache.push(fn);
 };
 
-Middleware.prototype._execute = async function(idx, next) {
-    let len = this.list.length - 1;
-
-    if (idx <= len) {
-        let mw = this.list[idx];
-        await mw.call(this, this.context, next);
+EventMiddleWare.prototype.execute = async function(es) {
+    if (this._cache) {
+        var _list = this._cache.slice(0);
+        let next = async () => {
+            var fn = _list.shift();
+            if (fn) {
+                await fn(es, next);
+            }
+        };
+        next();
     }
 };
 
-Middleware.prototype.do = async function(context) {
-    this.context = context;
-    let thisRef = this;
-    let idx = 0;
-    await this._execute(idx, next);
+function EventSession(name, data, callback) {
+    this.name = name;
+    this.data = data;
+    this.callback = callback;
 
-    async function next() {
-        idx += 1;
-        await thisRef._execute(idx, next);
+    EventSession.sessionId = EventSession.sessionId || 0;
+    this.id = EventSession.sessionId++;
+}
+
+EventSession.prototype.perf = function() {
+    EventSession.sessionCache = EventSession.sessionCache || {};
+    if (!EventSession.sessionCache[this.name]) {
+        EventSession.sessionCache[this.name] = Date.now();
+    } else {
+        console.log("session cost", Date.now - EventSession.sessionCache[this.name]);
     }
 };
 
 // test
-var mw = new Middleware();
+var mw = new EventMiddleWare();
 mw.use(async function(context, next) {
     console.log("middleware 1 before");
     await next();
@@ -60,6 +64,6 @@ mw.use(async function(context, next) {
 });
 
 (async () => {
-    await mw.do({ name: "TestEvent" });
+    await mw.execute({ name: "TestEvent" });
 })();
 // mw.do({ name: "TestEvent" });
